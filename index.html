@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="path/to/your/icon.png">
+    <title>منصة العملات الشاملة</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luxon@2.0.2/build/global/luxon.min.js"></script>
+    <script src="https://hammerjs.github.io/dist/hammer.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --background-color: #ecf0f1;
+            --text-color: #34495e;
+            --danger-color: #e74c3c;
+        }
+        body {
+            font-family: 'Tajawal', Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            color: var(--primary-color);
+            text-align: center;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        #result, #multipleResults {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+        #chart {
+            height: 300px;
+        }
+        .loading {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .loading i {
+            color: var(--primary-color);
+        }
+        #favoritesList, #alertsList {
+            margin-top: 20px;
+        }
+        .list-item {
+            background-color: var(--background-color);
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .remove-item {
+            color: var(--danger-color);
+            cursor: pointer;
+        }
+        #newsContainer {
+            margin-top: 30px;
+        }
+        .news-item {
+            border-bottom: 1px solid #ddd;
+            padding: 10px 0;
+        }
+        .news-item h3 {
+            margin: 0;
+            color: var(--primary-color);
+        }
+        .news-item p {
+            margin: 5px 0;
+        }
+        #calculatorContainer {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .calc-btn {
+            flex: 1 0 21%;
+            padding: 10px;
+            font-size: 18px;
+            text-align: center;
+            background-color: #f1f1f1;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #calcDisplay {
+            width: 100%;
+            padding: 10px;
+            font-size: 24px;
+            text-align: right;
+            margin-bottom: 10px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            .container {
+                padding: 15px;
+            }
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            h1 {
+                font-size: 24px;
+            }
+            h2 {
+                font-size: 20px;
+            }
+            .btn {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+            #chart, #technicalChart {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>منصة العملات الشاملة</h1>
+        
+        <div class="grid">
+            <div class="card">
+                <h2>تحويل العملات</h2>
+                <div class="input-group">
+                    <label for="amount">المبلغ</label>
+                    <input type="number" id="amount" value="1" min="0" step="0.01">
+                </div>
+                <div class="input-group">
+                    <label for="fromCurrency">من</label>
+                    <select id="fromCurrency"></select>
+                </div>
+                <div class="input-group">
+                    <label for="toCurrency">إلى</label>
+                    <select id="toCurrency"></select>
+                </div>
+                <button class="btn" onclick="convertCurrency()">تحويل</button>
+                <div id="result"></div>
+            </div>
+            
+            <div class="card">
+                <h2>تحويل متعدد العملات</h2>
+                <div class="input-group">
+                    <label for="multipleAmount">المبلغ</label>
+                    <input type="number" id="multipleAmount" value="1" min="0" step="0.01">
+                </div>
+                <div class="input-group">
+                    <label for="multipleFromCurrency">من</label>
+                    <select id="multipleFromCurrency"></select>
+                </div>
+                <div class="input-group">
+                    <label for="multipleToCurrencies">إلى (اختر عدة عملات)</label>
+                    <select id="multipleToCurrencies" multiple></select>
+                </div>
+                <button class="btn" onclick="convertMultipleCurrencies()">تحويل</button>
+                <div id="multipleResults"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>الرسم البياني التاريخي</h2>
+            <div class="input-group">
+                <label for="chartFromCurrency">من</label>
+                <select id="chartFromCurrency"></select>
+            </div>
+            <div class="input-group">
+                <label for="chartToCurrency">إلى</label>
+                <select id="chartToCurrency"></select>
+            </div>
+            <div class="input-group">
+                <label for="chartPeriod">الفترة الزمنية</label>
+                <select id="chartPeriod">
+                    <option value="7">أسبوع</option>
+                    <option value="30">شهر</option>
+                    <option value="90">3 أشهر</option>
+                    <option value="180">6 أشهر</option>
+                    <option value="365">سنة</option>
+                </select>
+            </div>
+            <button class="btn" onclick="updateChart()">تحديث الرسم البياني</button>
+            <canvas id="chart"></canvas>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h2>التحويلات المفضلة</h2>
+                <div id="favoritesList"></div>
+                <div class="input-group">
+                    <label for="favFromCurrency">من</label>
+                    <select id="favFromCurrency"></select>
+                </div>
+                <div class="input-group">
+                    <label for="favToCurrency">إلى</label>
+                    <select id="favToCurrency"></select>
+                </div>
+                <button class="btn" onclick="addToFavorites()">إضافة إلى المفضلة</button>
+            </div>
+
+            <div class="card">
+                <h2>تنبيهات أسعار الصرف</h2>
+                <div id="alertsList"></div>
+                <div class="input-group">
+                    <label for="alertFromCurrency">من</label>
+                    <select id="alertFromCurrency"></select>
+                </div>
+                <div class="input-group">
+                    <label for="alertToCurrency">إلى</label>
+                    <select id="alertToCurrency"></select>
+                </div>
+                <div class="input-group">
+                    <label for="alertRate">السعر المستهدف</label>
+                    <input type="number" id="alertRate" step="0.0001">
+                </div>
+                <button class="btn" onclick="addAlert()">إضافة تنبيه</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>آلة حاسبة للعملات</h2>
+            <div id="calcDisplay">0</div>
+            <div id="calculatorContainer">
+                <div class="calc-btn" onclick="appendToCalc('7')">7</div>
+                <div class="calc-btn" onclick="appendToCalc('8')">8</div>
+                <div class="calc-btn" onclick="appendToCalc('9')">9</div>
+                <div class="calc-btn" onclick="appendToCalc('+')">+</div>
+                <div class="calc-btn" onclick="appendToCalc('4')">4</div>
+                <div class="calc-btn" onclick="appendToCalc('5')">5</div>
+                <div class="calc-btn" onclick="appendToCalc('6')">6</div>
+                <div class="calc-btn" onclick="appendToCalc('-')">-</div>
+                <div class="calc-btn" onclick="appendToCalc('1')">1</div>
+                <div class="calc-btn" onclick="appendToCalc('2')">2</div>
+                <div class="calc-btn" onclick="appendToCalc('3')">3</div>
+                <div class="calc-btn" onclick="appendToCalc('*')">*</div>
+                <div class="calc-btn" onclick="appendToCalc('0')">0</div>
+                <div class="calc-btn" onclick="appendToCalc('.')">.</div>
+                <div class="calc-btn" onclick="calculateResult()">=</div>
+                <div class="calc-btn" onclick="appendToCalc('/')">/</div>
+                <div class="calc-btn" onclick="clearCalc()">C</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>أخبار العملات</h2>
+            <div id="newsContainer"></div>
+        </div>
+    </div>
+
+    <div id="mobileNav">
+        <button onclick="showSection('converter')">المحول</button>
+        <button onclick="showSection('chart')">الرسم البياني</button>
+        <button onclick="showSection('portfolio')">المحفظة</button>
+        <button onclick="showSection('news')">الأخبار</button>
+    </div>
+
+    <script>
+        const DateTime = luxon.DateTime;
+        let exchangeRates = {};
+        let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+        let alerts = JSON.parse(localStorage.getItem('alerts')) || [];
+        let chart;
+
+        // تهيئة التطبيق
+        async function initApp() {
+            await fetchCurrencies();
+            populateCurrencySelects();
+            updateFavoritesList();
+            updateAlertsList();
+            convertCurrency();
+            updateChart();
+            fetchNews();
+        }
+
+        // جلب أسعار الصرف
+        async function fetchCurrencies() {
+            try {
+                const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+                const data = await response.json();
+                exchangeRates = data.rates;
+            } catch (error) {
+                console.error('خطأ في جلب العملات:', error);
+            }
+        }
+
+        // ملء قوائم العملات
+        function populateCurrencySelects() {
+            const selects = [
+                'fromCurrency', 'toCurrency', 'multipleFromCurrency', 'multipleToCurrencies',
+                'chartFromCurrency', 'chartToCurrency', 'favFromCurrency', 'favToCurrency',
+                'alertFromCurrency', 'alertToCurrency'
+            ];
+            const currencies = Object.keys(exchangeRates);
+            
+            selects.forEach(selectId => {
+                const select = document.getElementById(selectId);
+                select.innerHTML = '';
+                currencies.forEach(currency => {
+                    select.add(new Option(currency, currency));
+                });
+            });
+
+            // تعيين القيم الافتراضية
+            document.getElementById('fromCurrency').value = 'USD';
+            document.getElementById('toCurrency').value = 'EUR';
+            document.getElementById('multipleFromCurrency').value = 'USD';
+            document.getElementById('chartFromCurrency').value = 'USD';
+            document.getElementById('chartToCurrency').value = 'EUR';
+        }
+
+        // تحويل العملة
+        async function convertCurrency() {
+            const amount = document.getElementById('amount').value;
+            const fromCurrency = document.getElementById('fromCurrency').value;
+            const toCurrency = document.getElementById('toCurrency').value;
+
+            if (fromCurrency === toCurrency) {
+                updateResult(amount, amount, fromCurrency, toCurrency);
+                return;
+            }
+
+            try {
+                const response = await fetch(`https://api.exchangerate-api.com/v4/latest/${fromCurrency}`);
+                const data = await response.json();
+                const rate = data.rates[toCurrency];
+                const convertedAmount = amount * rate;
+
+                updateResult(amount, convertedAmount, fromCurrency, toCurrency);
+                checkAlerts(fromCurrency, toCurrency, rate);
+            } catch (error) {
+                console.error('خطأ في التحويل:', error);
+            }
+        }
+
+        // تحديث نتيجة التحويل
+        function updateResult(fromAmount, toAmount, fromCurrency, toCurrency) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `
+                <p>${fromAmount} ${fromCurrency} = ${parseFloat(toAmount).toFixed(2)} ${toCurrency}</p>
+                <p>1 ${fromCurrency} = ${(toAmount / fromAmount).toFixed(4)} ${toCurrency}</p>
+                <p>1 ${toCurrency} = ${(fromAmount / toAmount).toFixed(4)} ${fromCurrency}</p>
+            `;
+        }
+
+        // تحويل متعدد العملات
+        async function convertMultipleCurrencies() {
+            const amount = document.getElementById('multipleAmount').value;
+            const fromCurrency = document.getElementById('multipleFromCurrency').value;
+            const toCurrencies = Array.from(document.getElementById('multipleToCurrencies').selectedOptions).map(option => option.value);
+
+            const results = [];
+
+            try {
+                const response = await fetch(`https://api.exchangerate-api.com/v4/latest/${fromCurrency}`);
+                const data = await response.json();
+
+                for (const toCurrency of toCurrencies) {
+                    const rate = data.rates[toCurrency];
+                    const convertedAmount = amount * rate;
+                    results.push(`${amount} ${fromCurrency} = ${parseFloat(convertedAmount).toFixed(2)} ${toCurrency}`);
+                }
+
+                document.getElementById('multipleResults').innerHTML = results.join('<br>');
+            } catch (error) {
+                console.error('خطأ في التحويل المتعدد:', error);
+            }
+        }
+
+        // تحديث الرسم البياني
+        async function updateChart() {
+            const fromCurrency = document.getElementById('chartFromCurrency').value;
+            const toCurrency = document.getElementById('chartToCurrency').value;
+            const period = document.getElementById('chartPeriod').value;
+
+            const endDate = DateTime.now();
+            const startDate = endDate.minus({ days: parseInt(period) });
+
+            const dates = [];
+            const rates = [];
+
+            for (let d = startDate; d <= endDate; d = d.plus({ days: 1 })) {
+                const dateString = d.toFormat('yyyy-MM-dd');
+                dates.push(dateString);
+
+                try {
+                    const response = await fetch(`https://api.exchangerate-api.com/v4/historical/${dateString}`);
+                    const data = await response.json();
+                    const rate = data.rates[toCurrency] / data.rates[fromCurrency];
+                    rates.push(rate);
+                } catch (error) {
+                    console.error('خطأ في جلب البيانات التاريخية:', error);
+                }
+            }
+
+            const ctx = document.getElementById('chart').getContext('2d');
+            if (chart) {
+                chart.destroy();
+            }
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: `سعر ${fromCurrency} مقابل ${toCurrency}`,
+                        data: rates,
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: false
+                        }
+                    },
+                    plugins: {
+                        zoom: {
+                            pan: {
+                                enabled: true,
+                                mode: 'xy',
+                                threshold: 10,
+                            },
+                            zoom: {
+                                wheel: {
+                                    enabled: false,
+                                },
+                                pinch: {
+                                    enabled: true
+                                },
+                                mode: 'xy',
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // إضافة إلى المفضلة
+        function addToFavorites() {
+            const fromCurrency = document.getElementById('favFromCurrency').value;
+            const toCurrency = document.getElementById('favToCurrency').value;
+            const favorite = { from: fromCurrency, to: toCurrency };
+
+            if (!favorites.some(f => f.from === fromCurrency && f.to === toCurrency)) {
+                favorites.push(favorite);
+                localStorage.setItem('favorites', JSON.stringify(favorites));
+                updateFavoritesList();
+            }
+        }
+
+        // تحديث قائمة المفضلة
+        function updateFavoritesList() {
+            const favoritesListDiv = document.getElementById('favoritesList');
+            favoritesListDiv.innerHTML = '';
+            favorites.forEach((favorite, index) => {
+                const favoriteItem = document.createElement('div');
+                favoriteItem.className = 'list-item';
+                favoriteItem.innerHTML = `
+                    <span>${favorite.from} إلى ${favorite.to}</span>
+                    <i class="fas fa-times remove-item" onclick="removeFavorite(${index})"></i>
+                `;
+                favoritesListDiv.appendChild(favoriteItem);
+            });
+        }
+
+        // إزالة من المفضلة
+        function removeFavorite(index) {
+            favorites.splice(index, 1);
+            localStorage.setItem('favorites', JSON.stringify(favorites));
+            updateFavoritesList();
+        }
+
+        // إضافة تنبيه
+        function addAlert() {
+            const fromCurrency = document.getElementById('alertFromCurrency').value;
+            const toCurrency = document.getElementById('alertToCurrency').value;
+            const rate = parseFloat(document.getElementById('alertRate').value);
+            const alert = { from: fromCurrency, to: toCurrency, rate: rate };
+
+            alerts.push(alert);
+            localStorage.setItem('alerts', JSON.stringify(alerts));
+            updateAlertsList();
+        }
+
+        // تحديث قائمة التنبيهات
+        function updateAlertsList() {
+            const alertsListDiv = document.getElementById('alertsList');
+            alertsListDiv.innerHTML = '';
+            alerts.forEach((alert, index) => {
+                const alertItem = document.createElement('div');
+                alertItem.className = 'list-item';
+                alertItem.innerHTML = `
+                    <span>${alert.from}/${alert.to} عند ${alert.rate}</span>
+                    <i class="fas fa-times remove-item" onclick="removeAlert(${index})"></i>
+                `;
+                alertsListDiv.appendChild(alertItem);
+            });
+        }
+
+        // إزالة تنبيه
+        function removeAlert(index) {
+            alerts.splice(index, 1);
+            localStorage.setItem('alerts', JSON.stringify(alerts));
+            updateAlertsList();
+        }
+
+        // التحقق من التنبيهات
+        function checkAlerts(fromCurrency, toCurrency, currentRate) {
+            alerts.forEach(alert => {
+                if (alert.from === fromCurrency && alert.to === toCurrency) {
+                    if ((alert.rate > currentRate && currentRate <= alert.rate) ||
+                        (alert.rate < currentRate && currentRate >= alert.rate)) {
+                        alert(`تنبيه: سعر ${fromCurrency}/${toCurrency} وصل إلى ${currentRate}`);
+                    }
+
+                }
+            });
+        }
+
+        // جلب أخبار العملات
+        async function fetchNews() {
+            const apiKey = 'YOUR_NEWS_API_KEY'; // استبدل بمفتاح API الخاص بك
+            const url = `https://newsapi.org/v2/everything?q=currency+exchange&apiKey=${apiKey}&language=ar`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                displayNews(data.articles.slice(0, 5));
+            } catch (error) {
+                console.error('خطأ في جلب الأخبار:', error);
+            }
+        }
+
+        // عرض الأخبار
+        function displayNews(articles) {
+            const newsContainer = document.getElementById('newsContainer');
+            newsContainer.innerHTML = '';
+            articles.forEach(article => {
+                const newsItem = document.createElement('div');
+                newsItem.className = 'news-item';
+                newsItem.innerHTML = `
+                    <h3>${article.title}</h3>
+                    <p>${article.description}</p>
+                    <a href="${article.url}" target="_blank">اقرأ المزيد</a>
+                `;
+                newsContainer.appendChild(newsItem);
+            });
+        }
+
+        // وظائف الآلة الحاسبة
+        function appendToCalc(value) {
+            const display = document.getElementById('calcDisplay');
+            if (display.textContent === '0') {
+                display.textContent = value;
+            } else {
+                display.textContent += value;
+            }
+        }
+
+        function clearCalc() {
+            document.getElementById('calcDisplay').textContent = '0';
+        }
+
+        function calculateResult() {
+            const display = document.getElementById('calcDisplay');
+            try {
+                display.textContent = eval(display.textContent);
+            } catch (error) {
+                display.textContent = 'خطأ';
+            }
+        }
+
+        function showSection(sectionId) {
+            const sections = ['converter', 'chart', 'portfolio', 'news'];
+            sections.forEach(id => {
+                document.getElementById(id).style.display = id === sectionId ? 'block' : 'none';
+            });
+        }
+
+        const container = document.querySelector('.container');
+        const hammer = new Hammer(container);
+
+        hammer.on('swipeleft swiperight', function(ev) {
+            const currentSection = document.querySelector('.card:not([style*="display: none"])').id;
+            const sections = ['converter', 'chart', 'portfolio', 'news'];
+            const currentIndex = sections.indexOf(currentSection);
+            let newIndex;
+
+            if (ev.type === 'swipeleft') {
+                newIndex = (currentIndex + 1) % sections.length;
+            } else {
+                newIndex = (currentIndex - 1 + sections.length) % sections.length;
+            }
+
+            showSection(sections[newIndex]);
+        });
+
+        // بدء التطبيق
+        initApp();
+    </script>
+</body>
+</html>
